@@ -23,6 +23,8 @@ start_button.rect.x = 770
 start_button.rect.y = 400
 bullet_image = pygame.image.load("data/normal_bullet.png")
 bullet_image = pygame.transform.rotate(bullet_image, 90)
+enemy_bullet_im = pygame.image.load("data/enemy_bullet.png")
+enemy_bullet_im = pygame.transform.rotate(enemy_bullet_im, -90)
 pngs = [
     pygame.image.load("data/animated_spaceship/frame1.png"),
     pygame.image.load("data/animated_spaceship/frame2.png"),
@@ -40,10 +42,11 @@ for i in range(13):
         f"data/small_explosion/enemy_explosion{i}.png"
     ))
 bullets = pygame.sprite.Group()
+enemy_bullets = pygame.sprite.Group()
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, bul_x, bul_y, bul_im, bul_dmg):
+    def __init__(self, bul_x, bul_y, bul_im, bul_dmg, bul_team="character"):
         super(Bullet, self).__init__()
         self.x = bul_x
         self.y = bul_y
@@ -51,14 +54,18 @@ class Bullet(pygame.sprite.Sprite):
         self.damage = bul_dmg
         self.bul_sprite = pygame.sprite.Group()
         self.bullet_sprite = pygame.sprite.Sprite()
-        self.bullet_sprite.image = pygame.image.load("data/start_button.png")
+        self.bullet_sprite.image = pygame.image.load("data/normal_bullet.png")
         self.bullet_sprite.rect = self.bullet_sprite.image.get_rect()
         self.rect = self.image.get_rect()
         self.rect.x = bul_x
         self.rect.y = bul_y
+        self.team = bul_team
 
     def draw_bullet(self, scr):
-        self.rect.y -= 5
+        if self.team == "character":
+            self.rect.y -= 5
+        else:
+            self.rect.y += 2
         scr.blit(self.image, [self.x, self.y])
 
 
@@ -85,6 +92,7 @@ class Enemy(pygame.sprite.Sprite):
         self.sprite_check.add(self.sprite)
         self.alive = True
         self.explosioned = False
+        self.move_direction = "right"
 
     def draw_enemy(self, scr):
         if self.animCount >= 64:
@@ -121,6 +129,16 @@ class Enemy(pygame.sprite.Sprite):
                 sprts[0].kill()
                 sprts[1].kill()
 
+    def move(self):
+        if self.move_direction == "right":
+            self.x += 1
+            if self.x == 950:
+                self.move_direction = "left"
+        elif self.move_direction == "left":
+            self.x -= 1
+            if self.x == 790:
+                self.move_direction = "right"
+
 
 spaceShip = [pygame.transform.rotate(i, 180) for i in pngs]
 pressed = False
@@ -134,6 +152,7 @@ dif = 1
 going_down = False
 got_top = False
 fire_stop = 0
+enemy_fire_stop = 0
 main_ship_x = 870
 main_ship_y = 700
 score = 0
@@ -156,12 +175,15 @@ def draw_ship():
     screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
     animCount += 1
 
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
     for bullet in bullets:
         bullet.draw_bullet(screen)
+    for enemy_bullet in enemy_bullets:
+        enemy_bullet.draw_bullet(screen)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_RIGHT] and main_ship_x < 1830:
         main_ship_x += 4
@@ -175,6 +197,9 @@ while running:
         if fire_stop == 0 and got_top:
             bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
             bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
+    if enemy_fire_stop == 0 and got_top and first_enemy.alive:
+        enemy_bullets.add(Bullet(first_enemy.x + 45, first_enemy.y + 85, enemy_bullet_im, 10, "enemy"))
+        enemy_bullets.add(Bullet(first_enemy.x + 70, first_enemy.y + 85, enemy_bullet_im, 10, "enemy"))
     if pressed:
         start_button.kill()
         going_down = True
@@ -198,13 +223,18 @@ while running:
             center=(1815, 1030))
         screen.blit(text, place)
     fire_stop += 1
+    enemy_fire_stop += 1
     if fire_stop == 27:
         fire_stop = 0
+    if enemy_fire_stop == 180:
+        enemy_fire_stop = 0
     for bul in bullets.sprites():
-        if bul.y < 0:
+        if bul.y < 0 or bul.y > 1080:
             bul.kill()
     bullets.draw(screen)
+    enemy_bullets.draw(screen)
     first_enemy.check_damage(bullets)
     first_enemy.check_death()
+    first_enemy.move()
     pygame.display.flip()
     clock.tick(144)
