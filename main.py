@@ -8,6 +8,7 @@ if __name__ == '__main__':
     size = width, height = 1920, 1080
     screen = pygame.display.set_mode(size)
 
+# ниже идет создание спрайтов и групп спрайтов
 all_sprites = pygame.sprite.Group()
 sprites = ["data/space_background", "data/start_button.png"]
 background = pygame.sprite.Sprite()
@@ -21,10 +22,12 @@ start_button.image = pygame.image.load("data/start_button.png")
 start_button.rect = start_button.image.get_rect()
 start_button.rect.x = 770
 start_button.rect.y = 400
+# немножко повернем спрайты, чтобы они нормально выглядели
 bullet_image = pygame.image.load("data/normal_bullet.png")
 bullet_image = pygame.transform.rotate(bullet_image, 90)
 enemy_bullet_im = pygame.image.load("data/enemy_bullet.png")
 enemy_bullet_im = pygame.transform.rotate(enemy_bullet_im, -90)
+# список кадров анимации главногго корабля
 pngs = [
     pygame.image.load("data/animated_spaceship/frame1.png"),
     pygame.image.load("data/animated_spaceship/frame2.png"),
@@ -41,6 +44,7 @@ for i in range(13):
     explosion_pngs.append(pygame.image.load(
         f"data/small_explosion/enemy_explosion{i}.png"
     ))
+# группы спрайтов пуль гг и мобов
 bullets = pygame.sprite.Group()
 enemy_bullets = pygame.sprite.Group()
 
@@ -140,6 +144,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.move_direction = "right"
 
 
+# константы или переменные, которые просто есть и нужны для рассчетов
 spaceShip = [pygame.transform.rotate(i, 180) for i in pngs]
 pressed = False
 animCount = 0
@@ -193,6 +198,7 @@ while running:
         main_ship_y -= 4
     if keys[pygame.K_DOWN] and main_ship_y < 950:
         main_ship_y += 4
+# bullets.add() добавляет, логично, пули
     if keys[pygame.K_SPACE]:
         if fire_stop == 0 and got_top:
             bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
@@ -212,10 +218,12 @@ while running:
         got_top = True
     all_sprites.draw(screen)
     update(start_button, event)
+    # Фон достиг верха экрана (got top) и игра началась
     if got_top:
         draw_ship()
         first_enemy.draw_enemy(screen)
         first_enemy.draw_explosion()
+# создается надпись SCORE для счета
         font = pygame.font.Font("data/karmafuture.ttf", 45)
         text = font.render(
             "Score:" + str(score), True, (255, 255, 255))
@@ -231,6 +239,7 @@ while running:
     for bul in bullets.sprites():
         if bul.y < 0 or bul.y > 1080:
             bul.kill()
+# отрисовывается все, что есть на экране
     bullets.draw(screen)
     enemy_bullets.draw(screen)
     first_enemy.check_damage(bullets)
