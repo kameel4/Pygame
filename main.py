@@ -119,8 +119,12 @@ class Enemy(pygame.sprite.Sprite):
 
     def check_death(self):
         global score
+        global count_kill
+        # global new_enemy
         if self.alive:
             if self.hp <= 0:
+                count_kill += 1
+                new_enemy()
                 self.alive = False
                 self.sprite.kill()
                 score += 10
@@ -161,9 +165,21 @@ enemy_fire_stop = 0
 main_ship_x = 870
 main_ship_y = 700
 score = 0
-first_enemy = Enemy("blue_enemy", 870, 100, 100)
+count_kill = 0
+enemies = []
+enemies.append(Enemy("blue_enemy", 870, 100, 100))
 
 
+def new_enemy():
+    if count_kill <= 5:
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+    elif count_kill <= 10:
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+    elif count_kill > 10:
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        enemies.append(Enemy("blue_enemy", 870, 100, 100))
 def update(im, *args):
     global pressed
     if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
@@ -203,9 +219,10 @@ while running:
         if fire_stop == 0 and got_top:
             bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
             bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
-    if enemy_fire_stop == 0 and got_top and first_enemy.alive:
-        enemy_bullets.add(Bullet(first_enemy.x + 45, first_enemy.y + 85, enemy_bullet_im, 10, "enemy"))
-        enemy_bullets.add(Bullet(first_enemy.x + 70, first_enemy.y + 85, enemy_bullet_im, 10, "enemy"))
+    if enemy_fire_stop == 0 and got_top and enemies[0].alive:
+        for enemy in enemies:
+            enemy_bullets.add(Bullet(enemy.x + 45, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
+            enemy_bullets.add(Bullet(enemy.x + 70, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
     if pressed:
         start_button.kill()
         going_down = True
@@ -221,8 +238,9 @@ while running:
     # Фон достиг верха экрана (got top) и игра началась
     if got_top:
         draw_ship()
-        first_enemy.draw_enemy(screen)
-        first_enemy.draw_explosion()
+        for enemy in enemies:
+            enemy.draw_enemy(screen)
+            enemy.draw_explosion()
 # создается надпись SCORE для счета
         font = pygame.font.Font("data/karmafuture.ttf", 45)
         text = font.render(
@@ -242,8 +260,9 @@ while running:
 # отрисовывается все, что есть на экране
     bullets.draw(screen)
     enemy_bullets.draw(screen)
-    first_enemy.check_damage(bullets)
-    first_enemy.check_death()
-    first_enemy.move()
+    for enemy in enemies:
+        enemy.check_damage(bullets)
+        enemy.check_death()
+        enemy.move()
     pygame.display.flip()
     clock.tick(144)
