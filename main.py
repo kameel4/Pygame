@@ -1,6 +1,7 @@
 import os
 import sys
 import pygame
+import random
 from pygame.locals import *
 
 if __name__ == '__main__':
@@ -125,6 +126,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.hp <= 0:
                 count_kill += 1
                 new_enemy()
+                # del enemies[0]
                 self.alive = False
                 self.sprite.kill()
                 score += 10
@@ -167,19 +169,60 @@ main_ship_y = 700
 score = 0
 count_kill = 0
 enemies = []
-enemies.append(Enemy("blue_enemy", 870, 100, 100))
+HP = 100
+enemies.append(Enemy("blue_enemy", 870, 180, 100))
 
 
 def new_enemy():
+    global count_kill
     if count_kill <= 5:
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        if len(enemies) > 1:
+            while len(enemies) != 1:
+                del enemies[0]
+        elif len(enemies) == 1:
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
+            del enemies[0]
+            enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+        print(count_kill)
+        print(len(enemies))
     elif count_kill <= 10:
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        if len(enemies) > 2:
+            while len(enemies) != 2:
+                del enemies[0]
+        elif len(enemies) == 2:
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+            del enemies[-1]
+            enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+
+        elif len(enemies) < 2:
+            del enemies[0]
+            enemies.append(Enemy("blue_enemy", 400, 180, 100))
+            enemies.append(Enemy("blue_enemy", 870, 180, 100))
+
+
+        print(count_kill)
+        print(len(enemies))
     elif count_kill > 10:
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
-        enemies.append(Enemy("blue_enemy", 870, 100, 100))
+        if len(enemies) > 3:
+            while len(enemies) != 3:
+                del enemies[0]
+        elif len(enemies) == 3:
+            del enemies[0]
+            enemies.append(Enemy("blue_enemy", 870, 180, 100))
+
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+
+        print(len(enemies))
+        print(count_kill)
+
+
+# def del_enemy(terrorist):
+#     enemies.remove(terrorist)
+
+
 def update(im, *args):
     global pressed
     if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
@@ -195,6 +238,11 @@ def draw_ship():
 
     screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
     animCount += 1
+
+def damage_player():
+    if HP > 0:
+        if main_ship_x == enemy_bullets:
+            pass
 
 
 while running:
@@ -214,12 +262,12 @@ while running:
         main_ship_y -= 4
     if keys[pygame.K_DOWN] and main_ship_y < 950:
         main_ship_y += 4
-# bullets.add() добавляет, логично, пули
+    # bullets.add() добавляет, логично, пули
     if keys[pygame.K_SPACE]:
         if fire_stop == 0 and got_top:
             bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
             bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
-    if enemy_fire_stop == 0 and got_top and enemies[0].alive:
+    if enemy_fire_stop == 0 and got_top and len(enemies) != 0:
         for enemy in enemies:
             enemy_bullets.add(Bullet(enemy.x + 45, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
             enemy_bullets.add(Bullet(enemy.x + 70, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
@@ -241,7 +289,7 @@ while running:
         for enemy in enemies:
             enemy.draw_enemy(screen)
             enemy.draw_explosion()
-# создается надпись SCORE для счета
+        # создается надпись SCORE для счета
         font = pygame.font.Font("data/karmafuture.ttf", 45)
         text = font.render(
             "Score:" + str(score), True, (255, 255, 255))
@@ -257,12 +305,19 @@ while running:
     for bul in bullets.sprites():
         if bul.y < 0 or bul.y > 1080:
             bul.kill()
-# отрисовывается все, что есть на экране
+    # отрисовывается все, что есть на экране
     bullets.draw(screen)
     enemy_bullets.draw(screen)
     for enemy in enemies:
         enemy.check_damage(bullets)
         enemy.check_death()
         enemy.move()
+    heart_x = 300
+    heart_y = 900
+    for i in range(HP // 20):
+        heart = pygame.image.load('data/heart.png')
+        heart_react = heart.get_rect(center=(heart_x, heart_y))
+        heart_x += 40
+        screen.blit(heart, heart_react)
     pygame.display.flip()
     clock.tick(144)
