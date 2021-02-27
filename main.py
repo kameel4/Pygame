@@ -170,6 +170,8 @@ class Enemy(pygame.sprite.Sprite):
 # константы или переменные, которые просто есть и нужны для рассчетов
 spaceShip = [pygame.transform.rotate(i, 180) for i in pngs]
 pressed = False
+paused = False
+flipped = False
 animCount = 0
 explosionAnimCount = 0
 all_sprites.add(start_button)
@@ -186,6 +188,7 @@ main_ship_y = 700
 score = 0
 count_kill = 0
 enemies = []
+HP = 100
 
 
 class MainCharacter(pygame.sprite.Sprite):
@@ -208,7 +211,7 @@ class MainCharacter(pygame.sprite.Sprite):
             sprts = sprite_group.sprites()
             for y in sprts:
                 # if i.bul_team != "character":
-                self.HP -= 10
+                self.HP -= sprts[0].damage
                 sprts[0].kill()
                 sprts[1].kill()
 
@@ -250,91 +253,123 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
+                paused = not paused
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = event.pos
+            if 820 <= x <= 1110 and 390 <= y <= 540:
+                paused = False
+            elif 820 <= x <= 1120 and 640 <= y <= 770:
                 running = False
-    for bullet in bullets:
-        bullet.draw_bullet(screen)
-    for enemy_bullet in enemy_bullets:
-        enemy_bullet.draw_bullet(screen)
-    keys = pygame.key.get_pressed()
-    person = MainCharacter(890, 480)
-    if keys[pygame.K_RIGHT] and main_ship_x < 1830:
-        person.rect.x +=4
-        main_ship_x += 4
-    if keys[pygame.K_LEFT] and main_ship_x > 5:
-        person.rect.x -= 4
-        main_ship_x -= 4
-    if keys[pygame.K_UP] and main_ship_y > 10:
-        person.rect.y -= 4
-        main_ship_y -= 4
-    if keys[pygame.K_DOWN] and main_ship_y < 950:
-        person.rect.y += 4
-        main_ship_y += 4
-    # bullets.add() добавляет, логично, пули
-    if keys[pygame.K_SPACE]:
-        if fire_stop == 0 and got_top:
-            bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
-            bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
-    if enemy_fire_stop == 0 and got_top and len(enemies) != 0:
-        for enemy in enemies:
-            enemy_bullets.add(Bullet(enemy.x + 45, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
-            enemy_bullets.add(Bullet(enemy.x + 70, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
-    if pressed:
-        start_button.kill()
-        going_down = True
-        pressed = False
-    if going_down:
-        background.rect.y += dif
-        count += dif
-    if count == 0:
-        dif = 0
-        got_top = True
-    all_sprites.draw(screen)
-    update(start_button, event)
-    # Фон достиг верха экрана (got top) и игра началась
-    if got_top:
-        person.check_damage_main(enemy_bullets)
-        person.draw_ship()
+    if not paused:
+        flipped = False
+        for bullet in bullets:
+            bullet.draw_bullet(screen)
+        for enemy_bullet in enemy_bullets:
+            enemy_bullet.draw_bullet(screen)
+        keys = pygame.key.get_pressed()
+        person = MainCharacter(890, 480)
+        if keys[pygame.K_RIGHT] and main_ship_x < 1830:
+            person.rect.x +=4
+            main_ship_x += 4
+        if keys[pygame.K_LEFT] and main_ship_x > 5:
+            person.rect.x -= 4
+            main_ship_x -= 4
+        if keys[pygame.K_UP] and main_ship_y > 10:
+            person.rect.y -= 4
+            main_ship_y -= 4
+        if keys[pygame.K_DOWN] and main_ship_y < 950:
+            person.rect.y += 4
+            main_ship_y += 4
+        # bullets.add() добавляет, логично, пули
+        if keys[pygame.K_SPACE]:
+            if fire_stop == 0 and got_top:
+                bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
+                bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
+        if enemy_fire_stop == 0 and got_top and len(enemies) != 0:
+            for enemy in enemies:
+                enemy_bullets.add(Bullet(enemy.x + 45, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
+                enemy_bullets.add(Bullet(enemy.x + 70, enemy.y + 85, enemy_bullet_im, 10, "enemy"))
+        if pressed:
+            start_button.kill()
+            going_down = True
+            pressed = False
+        if going_down:
+            background.rect.y += dif
+            count += dif
+        if count == 0:
+            dif = 0
+            got_top = True
+        all_sprites.draw(screen)
+        update(start_button, event)
+        # Фон достиг верха экрана (got top) и игра началась
+        if got_top:
+            person.check_damage_main(enemy_bullets)
+            person.draw_ship()
 
+            for enemy in enemies:
+                enemy.draw_enemy(screen)
+                enemy.draw_explosion()
+            # создается надпись SCORE для счета
+            font = pygame.font.Font("data/karmafuture.ttf", 45)
+            text = font.render(
+                "Score:" + str(score), True, (255, 255, 255))
+            place = text.get_rect(
+                center=(1815, 1030))
+            screen.blit(text, place)
+        fire_stop += 1
+        enemy_fire_stop += 1
+        if fire_stop == 27:
+            fire_stop = 0
+        if enemy_fire_stop == 180:
+            enemy_fire_stop = 0
+        for bul in bullets.sprites():
+            if bul.y < 0 or bul.y > 1080:
+                bul.kill()
+        # отрисовывается все, что есть на экране
+        bullets.draw(screen)
+        enemy_bullets.draw(screen)
         for enemy in enemies:
-            enemy.draw_enemy(screen)
-            enemy.draw_explosion()
-        # создается надпись SCORE для счета
-        font = pygame.font.Font("data/karmafuture.ttf", 45)
-        text = font.render(
-            "Score:" + str(score), True, (255, 255, 255))
-        place = text.get_rect(
-            center=(1815, 1030))
-        screen.blit(text, place)
-    fire_stop += 1
-    enemy_fire_stop += 1
-    if fire_stop == 27:
-        fire_stop = 0
-    if enemy_fire_stop == 180:
-        enemy_fire_stop = 0
-    for bul in bullets.sprites():
-        if bul.y < 0 or bul.y > 1080:
-            bul.kill()
-    # отрисовывается все, что есть на экране
-    bullets.draw(screen)
-    enemy_bullets.draw(screen)
-    for enemy in enemies:
-        enemy.check_damage(bullets)
-        enemy.check_death()
-        enemy.move()
-    heart_x = 50
-    heart_y = 1000
-    if got_top:
-        for i in range(person.HP // 20):
-            heart = pygame.image.load('data/heart.png')
-            heart_react = heart.get_rect(center=(heart_x, heart_y))
-            heart_x += 40
-            screen.blit(heart, heart_react)
-    pygame.display.flip()
-    if count_kill <= 5:
-        clock.tick(130)
-    elif count_kill <= 10:
-        clock.tick(240)
+            enemy.check_damage(bullets)
+            enemy.check_death()
+            enemy.move()
+        heart_x = 50
+        heart_y = 1000
+        if got_top:
+            for i in range(HP // 20):
+                heart = pygame.image.load('data/heart.png')
+                heart_react = heart.get_rect(center=(heart_x, heart_y))
+                heart_x += 40
+                screen.blit(heart, heart_react)
+        pygame.display.flip()
+        if count_kill <= 5:
+            clock.tick(130)
+        elif count_kill <= 10:
+            clock.tick(240)
+        else:
+            clock.tick(1020)
     else:
-        clock.tick(1020)
+        pause_sprites = pygame.sprite.Group()
+        pause_image = pygame.sprite.Sprite()
+        back = pygame.sprite.Sprite()
+        exit_button = pygame.sprite.Sprite()
+        exit_button.image = pygame.image.load('data/exit_button.png')
+        back.image = pygame.image.load('data/back_button.png')
+        pause_image.image = pygame.image.load('data/pause_background.png')
+        pause_image.rect = pause_image.image.get_rect()
+        pause_image.rect.x = 0
+        pause_image.rect.y = 0
+        back.rect = back.image.get_rect()
+        back.rect.x = 820
+        back.rect.y = 390
+        exit_button.rect = exit_button.image.get_rect()
+        exit_button.rect.x = 820
+        exit_button.rect.y = 640
+        pause_sprites.add(pause_image)
+        pause_sprites.add(back)
+        pause_sprites.add(exit_button)
+        pause_sprites.draw(screen)
+        if not flipped:
+            pygame.display.flip()
+            flipped = True
