@@ -273,13 +273,25 @@ while running:
         if keys[pygame.K_RIGHT] and main_ship_x < 1830:
             person.character_sprite.rect.x += 4
             main_ship_x += 4
+        if keys[pygame.K_d] and main_ship_x < 1830:
+            person.character_sprite.rect.x += 4
+            main_ship_x += 4
         if keys[pygame.K_LEFT] and main_ship_x > 5:
+            person.character_sprite.rect.x -= 4
+            main_ship_x -= 4
+        if keys[pygame.K_a] and main_ship_x > 5:
             person.character_sprite.rect.x -= 4
             main_ship_x -= 4
         if keys[pygame.K_UP] and main_ship_y > 10:
             person.character_sprite.rect.y -= 4
             main_ship_y -= 4
+        if keys[pygame.K_w] and main_ship_y > 10:
+            person.character_sprite.rect.y -= 4
+            main_ship_y -= 4
         if keys[pygame.K_DOWN] and main_ship_y < 950:
+            person.character_sprite.rect.y += 4
+            main_ship_y += 4
+        if keys[pygame.K_s] and main_ship_y < 950:
             person.character_sprite.rect.y += 4
             main_ship_y += 4
         # bullets.add() добавляет, логично, пули
