@@ -8,8 +8,9 @@ if __name__ == '__main__':
     pygame.init()
     size = width, height = 1920, 1080
     screen = pygame.display.set_mode(size)
-    pygame.mixer.music.load()
-
+    pygame.mixer.music.load('data/music.wav')
+    pygame.mixer.music.play(100)
+    pygame.mixer.music.set_volume(0.2)
 # ниже идет создание спрайтов и групп спрайтов
 all_sprites = pygame.sprite.Group()
 sprites = ["data/space_background", "data/start_button.png"]
@@ -253,10 +254,13 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 paused = not paused
+                if not paused:
+                    pygame.mixer.music.unpause()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
             if 820 <= x <= 1110 and 390 <= y <= 540:
                 paused = False
+                pygame.mixer.music.unpause()
             elif 820 <= x <= 1120 and 640 <= y <= 770:
                 running = False
     if not paused:
@@ -344,6 +348,7 @@ while running:
         pygame.display.flip()
         clock.tick(120)
     else:
+        pygame.mixer.music.pause()
         pause_sprites = pygame.sprite.Group()
         pause_image = pygame.sprite.Sprite()
         back = pygame.sprite.Sprite()
