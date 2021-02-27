@@ -1,7 +1,7 @@
 import os
 import sys
 import pygame
-import random
+from random import randint
 from pygame.locals import *
 
 if __name__ == '__main__':
@@ -87,13 +87,17 @@ class Enemy(pygame.sprite.Sprite):
         self.sprite_list = [pygame.transform.rotate(i, 180) for i in self.sprite_lst]
         self.animCount = 0
         self.x, self.y = x, y
+        self.borders = (x, x + 200)
         self.hp = health_points
+        self.cnt = 0
+        self.drct = ["right", "left"]
         self.sprite_check = pygame.sprite.Group()
         self.sprite = pygame.sprite.Sprite()
         self.sprite.image = pygame.image.load("data/start_button.png")
         self.sprite.rect = self.sprite.image.get_rect()
         self.sprite.rect.x = self.x
-        self.sprite.rect.y = self.y
+        self.sprite.rect.y = self.y + 10
+        self.sprite.rect.width -= 100
         self.sprite_check.add(self.sprite)
         self.alive = True
         self.explosioned = False
@@ -125,10 +129,23 @@ class Enemy(pygame.sprite.Sprite):
         if self.alive:
             if self.hp <= 0:
                 count_kill += 1
-                new_enemy()
-                # del enemies[0]
                 self.alive = False
                 self.sprite.kill()
+                enemies.remove(self)
+                if count_kill <= 5:
+                    enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                elif count_kill <= 10:
+                    if len(enemies) == 1:
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                    elif len(enemies) == 0:
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                else:
+                    if len(enemies) == 2:
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                    elif len(enemies) == 1:
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
                 score += 10
 
     def check_damage(self, sprite_group):
@@ -140,14 +157,14 @@ class Enemy(pygame.sprite.Sprite):
                 sprts[1].kill()
 
     def move(self):
-        if self.move_direction == "right":
-            self.x += 1
-            if self.x == 950:
-                self.move_direction = "left"
-        elif self.move_direction == "left":
-            self.x -= 1
-            if self.x == 790:
-                self.move_direction = "right"
+        if self.y < 100:
+            self.y += 2
+        else:
+            if self.drct[self.cnt // 200 % 2] == "right":
+                self.x += 1
+            else:
+                self.x -= 1
+            self.cnt += 1
 
 
 # константы или переменные, которые просто есть и нужны для рассчетов
@@ -169,54 +186,43 @@ main_ship_y = 700
 score = 0
 count_kill = 0
 enemies = []
-HP = 100
-enemies.append(Enemy("blue_enemy", 870, 180, 100))
 
 
-def new_enemy():
-    global count_kill
-    if count_kill <= 5:
-        if len(enemies) > 1:
-            while len(enemies) != 1:
-                del enemies[0]
-        elif len(enemies) == 1:
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
-            del enemies[0]
-            enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
-        print(count_kill)
-        print(len(enemies))
-    elif count_kill <= 10:
-        if len(enemies) > 2:
-            while len(enemies) != 2:
-                del enemies[0]
-        elif len(enemies) == 2:
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
-            del enemies[-1]
-            enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
+class MainCharacter(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super(MainCharacter, self).__init__()
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("data/animated_spaceship/frame1.png")
+        self.rect = self.image.get_rect(center=(x, y))
+        self.HP = 100
+        self.character_sprite = pygame.sprite.Sprite()
+        self.character_sprite.image = pygame.image.load("data/animated_spaceship/frame1.png")
+        self.character_sprite.rect = self.character_sprite.image.get_rect()
+        self.rect = self.image.get_rect()
+        self.character_sprite.rect.x = x
+        self.character_sprite.rect.y = y
 
-        elif len(enemies) < 2:
-            del enemies[0]
-            enemies.append(Enemy("blue_enemy", 400, 180, 100))
-            enemies.append(Enemy("blue_enemy", 870, 180, 100))
+    def check_damage_main(self, sprite_group):
+        if pygame.sprite.spritecollideany(self.character_sprite, sprite_group) != None:
+            print('попал')
+            sprts = sprite_group.sprites()
+            for y in sprts:
+                # if i.bul_team != "character":
+                self.HP -= 10
+                sprts[0].kill()
+                sprts[1].kill()
+
+    @staticmethod
+    def draw_ship():
+        global animCount
+        if animCount >= 64:
+            animCount = 0
+
+        screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
+        animCount += 1
 
 
-        print(count_kill)
-        print(len(enemies))
-    elif count_kill > 10:
-        if len(enemies) > 3:
-            while len(enemies) != 3:
-                del enemies[0]
-        elif len(enemies) == 3:
-            del enemies[0]
-            enemies.append(Enemy("blue_enemy", 870, 180, 100))
-
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 180, 100))
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
-            # enemies.append(Enemy("blue_enemy", random.randint(0, 1200), 220, 100))
-
-        print(len(enemies))
-        print(count_kill)
+enemies.append(Enemy("blue_enemy", 870, 100, 100))
 
 
 # def del_enemy(terrorist):
@@ -230,19 +236,14 @@ def update(im, *args):
         pressed = True
 
 
-def draw_ship():
-    global animCount
-
-    if animCount >= 64:
-        animCount = 0
-
-    screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
-    animCount += 1
-
-def damage_player():
-    if HP > 0:
-        if main_ship_x == enemy_bullets:
-            pass
+# def draw_ship():
+#     global animCount
+#
+#     if animCount >= 64:
+#         animCount = 0
+#
+#     screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
+#     animCount += 1
 
 
 while running:
@@ -257,13 +258,18 @@ while running:
     for enemy_bullet in enemy_bullets:
         enemy_bullet.draw_bullet(screen)
     keys = pygame.key.get_pressed()
+    person = MainCharacter(890, 480)
     if keys[pygame.K_RIGHT] and main_ship_x < 1830:
+        person.rect.x +=4
         main_ship_x += 4
     if keys[pygame.K_LEFT] and main_ship_x > 5:
+        person.rect.x -= 4
         main_ship_x -= 4
     if keys[pygame.K_UP] and main_ship_y > 10:
+        person.rect.y -= 4
         main_ship_y -= 4
     if keys[pygame.K_DOWN] and main_ship_y < 950:
+        person.rect.y += 4
         main_ship_y += 4
     # bullets.add() добавляет, логично, пули
     if keys[pygame.K_SPACE]:
@@ -288,7 +294,9 @@ while running:
     update(start_button, event)
     # Фон достиг верха экрана (got top) и игра началась
     if got_top:
-        draw_ship()
+        person.check_damage_main(enemy_bullets)
+        person.draw_ship()
+
         for enemy in enemies:
             enemy.draw_enemy(screen)
             enemy.draw_explosion()
@@ -315,12 +323,18 @@ while running:
         enemy.check_damage(bullets)
         enemy.check_death()
         enemy.move()
-    heart_x = 300
-    heart_y = 900
-    for i in range(HP // 20):
-        heart = pygame.image.load('data/heart.png')
-        heart_react = heart.get_rect(center=(heart_x, heart_y))
-        heart_x += 40
-        screen.blit(heart, heart_react)
+    heart_x = 50
+    heart_y = 1000
+    if got_top:
+        for i in range(person.HP // 20):
+            heart = pygame.image.load('data/heart.png')
+            heart_react = heart.get_rect(center=(heart_x, heart_y))
+            heart_x += 40
+            screen.blit(heart, heart_react)
     pygame.display.flip()
-    clock.tick(144)
+    if count_kill <= 5:
+        clock.tick(130)
+    elif count_kill <= 10:
+        clock.tick(240)
+    else:
+        clock.tick(1020)
