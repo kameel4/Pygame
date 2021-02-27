@@ -8,6 +8,7 @@ if __name__ == '__main__':
     pygame.init()
     size = width, height = 1920, 1080
     screen = pygame.display.set_mode(size)
+    pygame.mixer.music.load()
 
 # ниже идет создание спрайтов и групп спрайтов
 all_sprites = pygame.sprite.Group()
@@ -204,16 +205,12 @@ class MainCharacter(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.character_sprite.rect.x = x
         self.character_sprite.rect.y = y
+        self.character_sprite.rect.width -= 70
 
     def check_damage_main(self, sprite_group):
         if pygame.sprite.spritecollideany(self.character_sprite, sprite_group) != None:
-            print('попал')
-            sprts = sprite_group.sprites()
-            for y in sprts:
-                # if i.bul_team != "character":
-                self.HP -= sprts[0].damage
-                sprts[0].kill()
-                sprts[1].kill()
+            pygame.sprite.spritecollideany(self.character_sprite, sprite_group).kill()
+            person.HP -= 10
 
     @staticmethod
     def draw_ship():
@@ -226,7 +223,7 @@ class MainCharacter(pygame.sprite.Sprite):
 
 
 enemies.append(Enemy("blue_enemy", 870, 100, 100))
-
+person = MainCharacter(870, 700)
 
 # def del_enemy(terrorist):
 #     enemies.remove(terrorist)
@@ -269,18 +266,17 @@ while running:
         for enemy_bullet in enemy_bullets:
             enemy_bullet.draw_bullet(screen)
         keys = pygame.key.get_pressed()
-        person = MainCharacter(890, 480)
         if keys[pygame.K_RIGHT] and main_ship_x < 1830:
-            person.rect.x +=4
+            person.character_sprite.rect.x += 4
             main_ship_x += 4
         if keys[pygame.K_LEFT] and main_ship_x > 5:
-            person.rect.x -= 4
+            person.character_sprite.rect.x -= 4
             main_ship_x -= 4
         if keys[pygame.K_UP] and main_ship_y > 10:
-            person.rect.y -= 4
+            person.character_sprite.rect.y -= 4
             main_ship_y -= 4
         if keys[pygame.K_DOWN] and main_ship_y < 950:
-            person.rect.y += 4
+            person.character_sprite.rect.y += 4
             main_ship_y += 4
         # bullets.add() добавляет, логично, пули
         if keys[pygame.K_SPACE]:
@@ -327,6 +323,9 @@ while running:
         for bul in bullets.sprites():
             if bul.y < 0 or bul.y > 1080:
                 bul.kill()
+        for enbul in enemy_bullets.sprites():
+            if enbul.y < 0 or enbul.y > 1080:
+                enbul.kill()
         # отрисовывается все, что есть на экране
         bullets.draw(screen)
         enemy_bullets.draw(screen)
@@ -337,18 +336,13 @@ while running:
         heart_x = 50
         heart_y = 1000
         if got_top:
-            for i in range(HP // 20):
+            for i in range(person.HP // 20):
                 heart = pygame.image.load('data/heart.png')
                 heart_react = heart.get_rect(center=(heart_x, heart_y))
                 heart_x += 40
                 screen.blit(heart, heart_react)
         pygame.display.flip()
-        if count_kill <= 5:
-            clock.tick(130)
-        elif count_kill <= 10:
-            clock.tick(240)
-        else:
-            clock.tick(1020)
+        clock.tick(120)
     else:
         pause_sprites = pygame.sprite.Group()
         pause_image = pygame.sprite.Sprite()
