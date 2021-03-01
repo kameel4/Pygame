@@ -1,7 +1,5 @@
-import os
-import sys
 import pygame
-from random import randint
+from random import randint, choice
 from pygame.locals import *
 
 if __name__ == '__main__':
@@ -30,6 +28,10 @@ bullet_image = pygame.image.load("data/normal_bullet.png")
 bullet_image = pygame.transform.rotate(bullet_image, 90)
 enemy_bullet_im = pygame.image.load("data/enemy_bullet.png")
 enemy_bullet_im = pygame.transform.rotate(enemy_bullet_im, -90)
+death_img = pygame.image.load("data/gameOver.png")
+death_rect = death_img.get_rect()
+death_rect.x = 800
+death_rect.y = 100
 # список кадров анимации главногго корабля
 pngs = [
     pygame.image.load("data/animated_spaceship/frame1.png"),
@@ -211,14 +213,24 @@ class Enemy(pygame.sprite.Sprite):
 
     def move(self):
         if self.alive:
-            if self.y < 100:
-                self.y += 2
-            else:
-                if self.drct[self.cnt // 200 % 2] == "right":
-                    self.x += 1
+            if 0 <= self.borders[0] <= 500 or 1400 <= self.borders[0] <= 1920:
+                if self.y < 200:
+                    self.y += 2
                 else:
-                    self.x -= 1
-                self.cnt += 1
+                    if self.drct[self.cnt // 200 % 2] == "right":
+                        self.x += 1
+                    else:
+                        self.x -= 1
+                    self.cnt += 1
+            else:
+                if self.y < 100:
+                    self.y += 2
+                else:
+                    if self.drct[self.cnt // 200 % 2] == "right":
+                        self.x += 1
+                    else:
+                        self.x -= 1
+                    self.cnt += 1
 
 
 # константы или переменные, которые просто есть и нужны для рассчетов
@@ -226,6 +238,7 @@ spaceShip = [pygame.transform.rotate(i, 180) for i in pngs]
 pressed = False
 paused = False
 flipped = False
+dead = False
 animCount = 0
 explosionAnimCount = 0
 all_sprites.add(start_button)
@@ -245,6 +258,7 @@ enemies = []
 explosioningEnemies = []
 droppingHearts = []
 HP = 100
+die = False
 
 
 class MainCharacter(pygame.sprite.Sprite):
@@ -271,7 +285,15 @@ class MainCharacter(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self.character_sprite, spriteGroup) != None:
             sprts = spriteGroup.sprites()
             person.HP += obj.hpUP
+            if person.HP >= 200:
+                person.HP = 200
             pygame.sprite.spritecollideany(self.character_sprite, spriteGroup).kill()
+
+    def death(self):
+        global die
+        if self.HP <= 0:
+            self.character_sprite.kill()
+            die = True
 
     @staticmethod
     def draw_ship():
@@ -298,17 +320,13 @@ def update(im, *args):
         pressed = True
 
 
-# def draw_ship():
-#     global animCount
-#
-#     if animCount >= 64:
-#         animCount = 0
-#
-#     screen.blit(spaceShip[animCount // 16], [main_ship_x, main_ship_y])
-#     animCount += 1
-
-
 while running:
+    for bul in bullets.sprites():
+        if bul.y < 0 or bul.y > 1080:
+            bul.kill()
+    for enbul in enemy_bullets.sprites():
+        if enbul.y < 0 or enbul.y > 1080:
+            enbul.kill()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -319,12 +337,57 @@ while running:
                     pygame.mixer.music.unpause()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            if 820 <= x <= 1110 and 390 <= y <= 540:
-                paused = False
-                pygame.mixer.music.unpause()
-            elif 820 <= x <= 1120 and 640 <= y <= 770:
-                running = False
-    if not paused:
+            if not die:
+                if 820 <= x <= 1110 and 390 <= y <= 540:
+                    paused = False
+                    pygame.mixer.music.unpause()
+                elif 820 <= x <= 1120 and 640 <= y <= 770:
+                    running = False
+            else:
+                if 820 <= x <= 1120 and 770 <= y <= 900:
+                    running = False
+                elif 700 <= x <= 1252 and 600 <= y <= 730:
+                    pygame.mixer.music.unpause()
+                    person.HP = 100
+                    die = False
+                    count_kill = 0
+                    score = 0
+                    droppingHearts = []
+                    enemies.clear()
+                    enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                    bullets.empty()
+                    enemy_bullets.empty()
+                    main_ship_x, main_ship_y = 870, 700
+                    person.character_sprite.rect.x = 870
+                    person.character_sprite.rect.y = 700
+    if die:
+        game_over_sprites = pygame.sprite.Group()
+        game_over_image = pygame.sprite.Sprite()
+        game_over_image.image = pygame.image.load('data/gameOver.png')
+        game_over_image.rect = game_over_image.image.get_rect()
+        game_over_image.rect.x = 710
+        game_over_image.rect.y = 100
+        game_over_sprites.add(game_over_image)
+        game_over_sprites.draw(screen)
+        pygame.mixer.music.pause()
+        pause_sprites = pygame.sprite.Group()
+        exit_button = pygame.sprite.Sprite()
+        exit_button.image = pygame.image.load('data/exit_button.png')
+        exit_button.rect = exit_button.image.get_rect()
+        exit_button.rect.x = 810
+        exit_button.rect.y = 770
+        tryAgain_button = pygame.sprite.Sprite()
+        tryAgain_button.image = pygame.image.load('data/tryAgain.png')
+        tryAgain_button.rect = tryAgain_button.image.get_rect()
+        tryAgain_button.rect.x = 690
+        tryAgain_button.rect.y = 600
+        pause_sprites.add(tryAgain_button)
+        pause_sprites.add(exit_button)
+        pause_sprites.draw(screen)
+        if not flipped:
+            pygame.display.flip()
+            flipped = True
+    elif not paused:
         flipped = False
         for bullet in bullets:
             bullet.draw_bullet(screen)
@@ -357,7 +420,7 @@ while running:
             main_ship_y += 4
         # bullets.add() добавляет, логично, пули
         if keys[pygame.K_SPACE]:
-            if fire_stop == 0 and got_top:
+            if fire_stop == 0 and got_top and not dead:
                 bullets.add(Bullet(main_ship_x + 20, main_ship_y, bullet_image, 10))
                 bullets.add(Bullet(main_ship_x + 35, main_ship_y, bullet_image, 10))
         if enemy_fire_stop == 0 and got_top and len(enemies) != 0:
@@ -381,6 +444,7 @@ while running:
         if got_top:
             person.check_damage_main(enemy_bullets)
             person.draw_ship()
+            person.death()
 
             for enemy in enemies:
                 enemy.draw_enemy(screen)
@@ -397,12 +461,6 @@ while running:
             fire_stop = 0
         if enemy_fire_stop == 180:
             enemy_fire_stop = 0
-        for bul in bullets.sprites():
-            if bul.y < 0 or bul.y > 1080:
-                bul.kill()
-        for enbul in enemy_bullets.sprites():
-            if enbul.y < 0 or enbul.y > 1080:
-                enbul.kill()
         # отрисовывается все, что есть на экране
         bullets.draw(screen)
         enemy_bullets.draw(screen)
