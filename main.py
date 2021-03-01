@@ -179,19 +179,19 @@ class Enemy(pygame.sprite.Sprite):
                 if self.explosioned:
                     enemies.remove(self)
                 if count_kill <= 5:
-                    enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                    enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
                 elif count_kill <= 10:
                     if (len(enemies) - len(explosioningEnemies)) == 1:
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
                     elif (len(enemies) - len(explosioningEnemies)) == 0:
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
                 else:
                     if (len(enemies) - len(explosioningEnemies)) == 2:
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
                     elif (len(enemies) - len(explosioningEnemies)) == 1:
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
-                        enemies.append(Enemy("blue_enemy", randint(300, 1000), -100, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
+                        enemies.append(Enemy("blue_enemy", randint(300, 1000), 150, 100))
                 score += 10
                 if randint(0, 5) == 1:
                     if randint(0, 10) == 1:
@@ -222,6 +222,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
 # константы или переменные, которые просто есть и нужны для рассчетов
+die = False
 spaceShip = [pygame.transform.rotate(i, 180) for i in pngs]
 pressed = False
 paused = False
@@ -267,11 +268,17 @@ class MainCharacter(pygame.sprite.Sprite):
             pygame.sprite.spritecollideany(self.character_sprite, sprite_group).kill()
             person.HP -= 10
 
-    def checkHpUP(self, spriteGroup, obj):
-        if pygame.sprite.spritecollideany(self.character_sprite, spriteGroup) != None:
-            sprts = spriteGroup.sprites()
-            person.HP += obj.hpUP
-            pygame.sprite.spritecollideany(self.character_sprite, spriteGroup).kill()
+    # def checkHpUP(self, spriteGroup, obj):
+    #     if pygame.sprite.spritecollideany(self.character_sprite, spriteGroup) != None:
+    #         sprts = spriteGroup.sprites()
+    #         person.HP += obj.hpUP
+    #         pygame.sprite.spritecollideany(self.character_sprite, spriteGroup).kill()
+
+    def death(self):
+        global die
+        if self.HP <= 0:
+            self.character_sprite.kill()
+            die = True
 
     @staticmethod
     def draw_ship():
@@ -283,7 +290,7 @@ class MainCharacter(pygame.sprite.Sprite):
         animCount += 1
 
 
-enemies.append(Enemy("blue_enemy", 870, 100, 100))
+enemies.append(Enemy("blue_enemy", 870, 180, 100))
 person = MainCharacter(870, 700)
 
 
@@ -324,7 +331,28 @@ while running:
                 pygame.mixer.music.unpause()
             elif 820 <= x <= 1120 and 640 <= y <= 770:
                 running = False
-    if not paused:
+    if die:
+        game_over_sprites = pygame.sprite.Group()
+        game_over_image = pygame.sprite.Sprite()
+        game_over_image.image = pygame.image.load('data/gameOver.png')
+        game_over_image.rect = game_over_image.image.get_rect()
+        game_over_image.rect.x = 820
+        game_over_image.rect.y = 350
+        game_over_sprites.add(game_over_image)
+        game_over_sprites.draw(screen)
+        pygame.mixer.music.pause()
+        pause_sprites = pygame.sprite.Group()
+        exit_button = pygame.sprite.Sprite()
+        exit_button.image = pygame.image.load('data/exit_button.png')
+        exit_button.rect = exit_button.image.get_rect()
+        exit_button.rect.x = 820
+        exit_button.rect.y = 640
+        pause_sprites.add(exit_button)
+        pause_sprites.draw(screen)
+        if not flipped:
+            pygame.display.flip()
+            flipped = True
+    elif not paused:
         flipped = False
         for bullet in bullets:
             bullet.draw_bullet(screen)
@@ -380,6 +408,7 @@ while running:
         # Фон достиг верха экрана (got top) и игра началась
         if got_top:
             person.check_damage_main(enemy_bullets)
+            person.death()
             person.draw_ship()
 
             for enemy in enemies:
@@ -389,7 +418,7 @@ while running:
             text = font.render(
                 "Kills:" + str(score // 10), True, (255, 255, 255))
             place = text.get_rect(
-                center=(1815, 1030))
+                center=(1550, 885))
             screen.blit(text, place)
         fire_stop += 1
         enemy_fire_stop += 1
@@ -414,8 +443,8 @@ while running:
             enemy.move()
         for enemy in explosioningEnemies:
             draw_explosion(enemy)
-        heart_x = 50
-        heart_y = 1000
+        heart_x = 300
+        heart_y = 900
         if got_top:
             for i in range(person.HP // 20):
                 heart = pygame.image.load('data/heart.png')
