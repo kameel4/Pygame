@@ -6,9 +6,9 @@ if __name__ == '__main__':
     pygame.init()
     size = width, height = 1920, 1080
     screen = pygame.display.set_mode(size)
-    pygame.mixer.music.load('data/music.wav')
-    pygame.mixer.music.play(100)
-    pygame.mixer.music.set_volume(0.01)
+    pygame.mixer.music.load('data/star_wars.wav')
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.1)
 # ниже идет создание спрайтов и групп спрайтов
 all_sprites = pygame.sprite.Group()
 sprites = ["data/space_background", "data/start_button.png"]
